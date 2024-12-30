@@ -1,6 +1,15 @@
+kaggle
+
+pandas
 numpy
 matplotlib
+mplfinance
 
---index-url https://download.pytorch.org/whl/cu124
+optuna
+optuna-dashboard
+# fvcore # calflops better imho
+calflops
+transformers # required by calflops
 
-torch
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch 
