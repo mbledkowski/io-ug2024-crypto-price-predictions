@@ -262,8 +262,8 @@ def eval_model(model, criterion, seq_length, test_loader):
         input_shape=(1, seq_length, 5),
         output_as_string=False,
         output_precision=4,
-        print_result=False,
-        print_detailed=False,
+        # print_result=False,
+        # print_detailed=False,
     )
     print("Alexnet FLOPs:%s   MACs:%s   Params:%s \n" % (flops, macs, params))
     return flops, test_loss
