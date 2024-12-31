@@ -97,7 +97,7 @@ data = df_norm.values
 def create_sequences(data, seq_length):
     sequences = []
     targets = []
-    for i in range(len(data) - seq_length):
+    for i in range(0, len(data) - seq_length, seq_length):
         seq = data[i: i + seq_length]
         target = data[i + seq_length]
         sequences.append(seq)
@@ -123,7 +123,7 @@ def get_dataloaders(seq_length=64, batch_size=64):
     sequences, targets = create_sequences(data, seq_length)
 
     # Sequential split
-    train_size = int(len(sequences) * 0.3)
+    train_size = int(len(sequences) * 0.4)
     X_train, X_test = (
         sequences[:train_size],
         sequences[train_size: train_size * 2],
@@ -280,8 +280,8 @@ criterions = [
 
 
 def optimalize(trial):
-    hidden_dim = trial.suggest_int("hidden_dim", 1, 4096, log=True)
-    layer_dim = trial.suggest_int("layer_dim", 1, 1024, log=True)
+    hidden_dim = trial.suggest_int("hidden_dim", 1, 2048, log=True)
+    layer_dim = trial.suggest_int("layer_dim", 1, 512, log=True)
     conv1 = trial.suggest_int("conv1", 1, 1025, log=True) - 1
     conv2 = trial.suggest_int("conv2", 1, 513, log=True) - 1
     criterion_id = trial.suggest_int("criterion", 0, 4)
@@ -293,7 +293,7 @@ def optimalize(trial):
         conv1=conv1,
         conv2=conv2,
     ).to(device)
-    seq_length = trial.suggest_int("seq_length", 2, 512)
+    seq_length = trial.suggest_int("seq_length", 2, 256)
     batch_size = trial.suggest_int("batch_size", 1, 128)
     train_loader, test_loader = get_dataloaders(seq_length, batch_size)
     optimizer = torch.optim.Adam(
