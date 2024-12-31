@@ -284,6 +284,7 @@ def optimalize(trial):
     layer_dim = trial.suggest_int("layer_dim", 1, 1024, log=True)
     conv1 = trial.suggest_int("conv1", 1, 1025, log=True) - 1
     conv2 = trial.suggest_int("conv2", 1, 513, log=True) - 1
+    criterion_id = trial.suggest_int("criterion", 0, 4)
     model = LSTMModel(
         input_dim=5,
         hidden_dim=hidden_dim,
@@ -298,8 +299,7 @@ def optimalize(trial):
     optimizer = torch.optim.Adam(
         model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     )
-    criterion = criterions[trial.suggest_int(
-        "criterion", 0, len(criterions) - 1)]
+    criterion = criterions[criterion_id]
     model = train_model(model, optimizer, criterion, train_loader)
     criterion = nn.MSELoss()
     flops, test_loss = eval_model(model, criterion, seq_length, test_loader)
