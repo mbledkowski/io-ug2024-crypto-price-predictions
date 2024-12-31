@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import random
 import os
+import time
 from calflops import calculate_flops
 
 
@@ -122,14 +123,14 @@ def get_dataloaders(seq_length=64, batch_size=64):
     sequences, targets = create_sequences(data, seq_length)
 
     # Sequential split
-    train_size = int(len(sequences) * 0.4)
+    train_size = int(len(sequences) * 0.3)
     X_train, X_test = (
         sequences[:train_size],
-        sequences[train_size:],
+        sequences[train_size: train_size * 2],
     )
     y_train, y_test = (
         targets[:train_size],
-        targets[train_size:],
+        targets[train_size: train_size * 2],
     )
 
     # Create Datasets
@@ -223,23 +224,23 @@ class LSTMModel(nn.Module):
         return out
 
 
-epochs = 1
-
-
 def train_model(model, optimizer, criterion, train_loader):
-    for epoch in range(epochs):
-        model.train()
-        for i, (x, y) in enumerate(train_loader):
-            x = x.to(device)
-            y = y.to(device)
+    start = time.time()
+    model.train()
+    for i, (x, y) in enumerate(train_loader):
+        if time.time() - start > 600:
+            break
 
-            optimizer.zero_grad()
+        x = x.to(device)
+        y = y.to(device)
 
-            y_pred = model(x)
-            loss = criterion(y_pred, y)
+        optimizer.zero_grad()
 
-            loss.backward()
-            optimizer.step()
+        y_pred = model(x)
+        loss = criterion(y_pred, y)
+
+        loss.backward()
+        optimizer.step()
     return model
 
 
@@ -279,8 +280,8 @@ criterions = [
 
 
 def optimalize(trial):
-    hidden_dim = trial.suggest_int("hidden_dim", 1, 8192, log=True)
-    layer_dim = trial.suggest_int("layer_dim", 1, 4096, log=True)
+    hidden_dim = trial.suggest_int("hidden_dim", 1, 4096, log=True)
+    layer_dim = trial.suggest_int("layer_dim", 1, 1024, log=True)
     conv1 = trial.suggest_int("conv1", 1, 1025, log=True) - 1
     conv2 = trial.suggest_int("conv2", 1, 513, log=True) - 1
     model = LSTMModel(
@@ -291,8 +292,8 @@ def optimalize(trial):
         conv1=conv1,
         conv2=conv2,
     ).to(device)
-    seq_length = trial.suggest_int("seq_length", 2, 1024)
-    batch_size = trial.suggest_int("batch_size", 1, 512)
+    seq_length = trial.suggest_int("seq_length", 2, 512)
+    batch_size = trial.suggest_int("batch_size", 1, 128)
     train_loader, test_loader = get_dataloaders(seq_length, batch_size)
     optimizer = torch.optim.Adam(
         model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1, log=True)
