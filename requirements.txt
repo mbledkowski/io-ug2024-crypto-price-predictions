@@ -7,6 +7,7 @@ mplfinance
 
 optuna
 optuna-dashboard
+PyMySQL # required for optuna
 # fvcore # calflops better imho
 calflops
 transformers # required by calflops

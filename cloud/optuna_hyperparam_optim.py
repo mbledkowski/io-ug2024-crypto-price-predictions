@@ -43,7 +43,6 @@ def normalize_volume(df):
         "volume"
     ].std()
 
-    print(df_norm.head(5), df_norm.min(), df_norm.max())
     return df_norm
 
 
@@ -263,6 +262,8 @@ def eval_model(model, criterion, seq_length, test_loader):
         input_shape=(1, seq_length, 5),
         output_as_string=False,
         output_precision=4,
+        print_result=False,
+        print_detailed=False,
     )
     print("Alexnet FLOPs:%s   MACs:%s   Params:%s \n" % (flops, macs, params))
     return flops, test_loss
@@ -278,10 +279,10 @@ criterions = [
 
 
 def optimalize(trial):
-    hidden_dim = trial.suggest_int("hidden_dim", 1, 1024, log=True)
-    layer_dim = trial.suggest_int("layer_dim", 1, 256, log=True)
-    conv1 = trial.suggest_int("conv1", 0, 128, log=True)
-    conv2 = trial.suggest_int("conv2", 0, 64, log=True)
+    hidden_dim = trial.suggest_int("hidden_dim", 1, 8192, log=True)
+    layer_dim = trial.suggest_int("layer_dim", 1, 4096, log=True)
+    conv1 = trial.suggest_int("conv1", 1, 1025, log=True) - 1
+    conv2 = trial.suggest_int("conv2", 1, 513, log=True) - 1
     model = LSTMModel(
         input_dim=5,
         hidden_dim=hidden_dim,
@@ -290,8 +291,8 @@ def optimalize(trial):
         conv1=conv1,
         conv2=conv2,
     ).to(device)
-    seq_length = trial.suggest_int("seq_length", 2, 128)
-    batch_size = trial.suggest_int("batch_size", 1, 128)
+    seq_length = trial.suggest_int("seq_length", 2, 1024)
+    batch_size = trial.suggest_int("batch_size", 1, 512)
     train_loader, test_loader = get_dataloaders(seq_length, batch_size)
     optimizer = torch.optim.Adam(
         model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1, log=True)
@@ -315,8 +316,8 @@ def objective(trial):
     return test_loss, flops
 
 
-study = optuna.create_study(
-    directions=["minimize", "minimize"], storage="mysql://root@localhost/optuna"
+study = optuna.load_study(
+    study_name="distributed-optuna", storage="mysql+pymysql://root@localhost/optuna"
 )
 study.optimize(objective, n_trials=500)
 
