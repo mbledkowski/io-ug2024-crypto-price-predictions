@@ -639,6 +639,19 @@ if __name__ == "__main__":
         conv1=conv1,
         conv2=conv2,
     ).to(device)
+    if os.path.isfile("./models/cnn_lstm_trained.model"):
+        model = LSTMModel(
+            input_dim=5,
+            hidden_dim=hidden_dim,
+            layer_dim=layer_dim,
+            output_dim=5,
+            conv1=conv1,
+            conv2=conv2,
+        )
+        model.load_state_dict(
+            torch.load("./models/cnn_lstm_trained.model", weights_only=True)
+        )
+        model.to(device)
     try:
         main(model)
     except KeyboardInterrupt:
