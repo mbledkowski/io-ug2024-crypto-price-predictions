@@ -332,7 +332,7 @@ def get_normalized_data(pair=None, test=False):
         if pair is None:
             pair = pairs[random.randint(0, len(pairs) - 1)]
         data = pd.read_csv("data/" + pair, index_col="time")
-        print(data.columns)
+        print(pair)
     df = load_and_fill_in_gaps(data)
     df_norm = normalize_volume(df)
     df_norm = normalize_prices(df_norm)
@@ -595,30 +595,35 @@ def main(model):
     )
 
     for epoch in range(epochs):
-        if increase_dropout_counter == 5:
-            increase_dropout_counter -= 1
-            if epoch > 50:
-                input_dropout += 1
-                model.dropout_rate = calc_dropout(input_dropout)
-                print(f"Dropout changed: {model.dropout_rate}")
+        try:
+            if increase_dropout_counter == 5:
+                increase_dropout_counter -= 1
+                if epoch > 50:
+                    input_dropout += 1
+                    model.dropout_rate = calc_dropout(input_dropout)
+                    wandb.log({"dropout": model.dropout_rate})
+                    print(f"Dropout changed: {model.dropout_rate}")
 
-        pair = None
-        # if epoch < 21:
-        #     pair = "btcusd.csv"
-        train_loader = get_dataloader(
-            get_normalized_data(pair).values, seq_length, batch_size, epoch
-        )
-        model = train_model(model, optimizer, criterion, train_loader)
-        test_loss, test_acc = eval_model(
-            model, criterion_test, seq_length, test_loader)
-        if test_loss > test_loss_over_time:
-            increase_dropout_counter += 1
-        else:
-            increase_dropout_counter = 0
-        test_loss_over_time += test_loss
-        test_loss_over_time /= 2
-        wandb.log({"val_loss": test_loss, "val_acc": test_acc})
-        print(f"Test loss: %s; Test accuracy: %s" % (test_loss, test_acc))
+            pair = None
+            # if epoch < 21:
+            #     pair = "btcusd.csv"
+            train_loader = get_dataloader(
+                get_normalized_data(pair).values, seq_length, batch_size, epoch
+            )
+            model = train_model(model, optimizer, criterion, train_loader)
+            test_loss, test_acc = eval_model(
+                model, criterion_test, seq_length, test_loader
+            )
+            if test_loss > test_loss_over_time:
+                increase_dropout_counter += 1
+            else:
+                increase_dropout_counter = 0
+            test_loss_over_time += test_loss
+            test_loss_over_time /= 2
+            wandb.log({"val_loss": test_loss, "val_acc": test_acc})
+            print(f"Test loss: %s; Test accuracy: %s" % (test_loss, test_acc))
+        except Exception as e:
+            print(e)
 
 
 if __name__ == "__main__":
