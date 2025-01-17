@@ -580,6 +580,7 @@ def main(model):
         },
     )
 
+    lowest_test_loss = 1000
     # 1/(2^n) sequence to account for the higher importance of newer values
     test_loss_over_time = 50
 
@@ -620,6 +621,12 @@ def main(model):
                 increase_dropout_counter = 0
             test_loss_over_time += test_loss
             test_loss_over_time /= 2
+            if lowest_test_loss > test_loss:
+                lowest_test_loss = test_loss
+                torch.save(
+                    model.state_dict(), "./models/cnn_lstm_trained_low_test_loss.model"
+                )
+
             wandb.log({"val_loss": test_loss, "val_acc": test_acc})
             print(f"Test loss: %s; Test accuracy: %s" % (test_loss, test_acc))
         except Exception as e:
